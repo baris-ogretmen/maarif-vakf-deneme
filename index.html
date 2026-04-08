@@ -79,6 +79,7 @@
             <button onclick="startGeneration()" class="w-full bg-[#1a365d] hover:bg-[#2c5282] text-white font-bold py-4 rounded-xl shadow-lg text-lg flex justify-center items-center transition transform hover:-translate-y-1">
                 <i class="fa-solid fa-play mr-3"></i> 120 Dakikalık Denemeyi Başlat
             </button>
+            <div id="api-error-msg" class="hidden mt-4 text-red-600 font-bold text-sm bg-red-100 p-3 rounded"></div>
         </section>
 
         <div id="screen-loading" class="loader-screen hidden">
@@ -176,12 +177,12 @@
         let appState = {
             apiKey: localStorage.getItem('tmv_key') || "",
             model: localStorage.getItem('tmv_model') || "gemini-1.5-flash",
-            questions: [], // Sınav soruları
-            answers: [], // Kullanıcının verdiği cevaplar (indeks tutar, boşsa null)
+            questions: [], 
+            answers: [], 
             currentIndex: 0,
-            timer: 7200, // 120 dakika (saniye)
+            timer: 7200, 
             interval: null,
-            wrongQuestions: [], // Analiz için
+            wrongQuestions: [], 
             currentAnalysisIndex: 0
         };
 
@@ -196,6 +197,7 @@
         function showSettings() {
             document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
             document.getElementById('screen-intro').classList.remove('hidden');
+            document.getElementById('api-error-msg').classList.add('hidden');
         }
 
         function saveConfig() {
@@ -207,40 +209,51 @@
             const msg = document.getElementById('save-msg');
             msg.classList.remove('hidden');
             setTimeout(() => msg.classList.add('hidden'), 2000);
+            document.getElementById('api-error-msg').classList.add('hidden');
         }
 
         // --- API İLETİŞİMİ (GEMINI) ---
         async function fetchExamFromAI() {
-            if (!appState.apiKey) { alert("Lütfen ayarlardan API Anahtarınızı giriniz."); return false; }
+            if (!appState.apiKey) { 
+                showError("Lütfen ayarlardan API Anahtarınızı giriniz."); 
+                return false; 
+            }
             
-            // İstediğimiz Soru Sayısı ve Dağılımı (15 Soru: Optimum API Süresi ve Kalitesi için)
-            // Sistem 120dk sayar ama API tek seferde çok fazla soru üretirse timeout yer.
-            // Bu yüzden yüksek kaliteli 15 soru (3 Mantık, 3 TMV, 4 Alan, 5 ÖYT) istiyoruz.
             const prompt = `Sen Türkiye Maarif Vakfı ve ÖSYM soru hazırlama komisyonusun. Bana Türkçe Öğretmeni adayı için ALES ve ÖABT zorluğunda tam 15 soruluk bir deneme hazırla. 
 Dağılım şöyle olsun:
-- 3 soru: Sözel Mantık ve Muhakeme (Aynı senaryoya bağlı veya bağımsız)
+- 3 soru: Sözel Mantık ve Muhakeme
 - 3 soru: TMV 6721 sayılı kanun ve Genel Kültür
-- 4 soru: Türkçe Alan Bilgisi (ÖABT - Dilbilgisi, Cümle Ögeleri, Ses Olayları)
-- 5 soru: Eğitim Bilimleri (ÖYT, Yapılandırmacılık, CEFR, İletişimsel Yaklaşım vakaları)
+- 4 soru: Türkçe Alan Bilgisi (Dilbilgisi, Cümle Ögeleri)
+- 5 soru: Eğitim Bilimleri (ÖYT, Yapılandırmacılık, CEFR vakaları)
 
 Kurallar:
-1. Soru metinleri (q) uzun ve çeldirici olsun.
+1. Soru metinleri uzun ve çeldirici olsun.
 2. Tam olarak 5 seçenek (A,B,C,D,E) olsun.
-3. category alanına sorunun hangi bölümden olduğunu yaz (Örn: "Türkçe Alan Bilgisi").`;
+3. category alanına sorunun hangi bölümden olduğunu yaz.`;
 
+            // DÜZELTİLEN KISIM: responseSchema artık OBJECT formatında ve questions dizisini barındırıyor.
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
                     responseMimeType: "application/json",
                     responseSchema: {
-                        type: "ARRAY", items: {
-                            type: "OBJECT", properties: {
-                                category: { type: "STRING" },
-                                q: { type: "STRING" },
-                                options: { type: "ARRAY", items: { type: "STRING" } },
-                                a: { type: "INTEGER" }
-                            }, required: ["category", "q", "options", "a"]
-                        }
+                        type: "OBJECT",
+                        properties: {
+                            questions: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT", 
+                                    properties: {
+                                        category: { type: "STRING" },
+                                        q: { type: "STRING" },
+                                        options: { type: "ARRAY", items: { type: "STRING" } },
+                                        a: { type: "INTEGER" }
+                                    }, 
+                                    required: ["category", "q", "options", "a"]
+                                }
+                            }
+                        },
+                        required: ["questions"]
                     }
                 }
             };
@@ -250,15 +263,28 @@ Kurallar:
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
                 });
                 
-                if (!response.ok) throw new Error("API Hatası");
                 const data = await response.json();
+                
+                // Eğer Google'dan bir hata mesajı dönerse (Kota, Yanlış API vs.)
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+
                 const text = data.candidates[0].content.parts[0].text;
-                return JSON.parse(text);
+                const parsedData = JSON.parse(text);
+                return parsedData.questions; // Düzeltilen JSON yapısından soruları çek
+                
             } catch (error) {
-                console.error(error);
-                alert("Yapay zeka soruları hazırlarken bir sorun oluştu. API anahtarınızı kontrol edin veya tekrar deneyin.");
+                console.error("API Hatası:", error);
+                showError("Bağlantı Hatası: " + error.message);
                 return false;
             }
+        }
+
+        function showError(msg) {
+            const errorBox = document.getElementById('api-error-msg');
+            errorBox.innerText = msg;
+            errorBox.classList.remove('hidden');
         }
 
         // --- SINAV BAŞLATMA ---
@@ -484,14 +510,19 @@ Bana kısa, dostane ve pedagojik bir dille adayın neden o şıkkı (varsa) kar�
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
+                
                 if (!response.ok) throw new Error("API Error");
+                
                 const data = await response.json();
                 
+                if (data.error) throw new Error(data.error.message);
+
                 btn.style.display = 'none'; // Butonu gizle
                 box.classList.remove('hidden');
                 box.innerHTML = `<strong class="text-[#1a365d]"><i class="fa-solid fa-graduation-cap mr-1"></i> Hoca Notu:</strong><br><br>` + data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                 
             } catch (e) {
+                console.error("Açıklama Hatası:", e);
                 btn.innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i> Hata. Tekrar Dene';
                 btn.disabled = false;
             }
