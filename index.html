@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TMV 120 Dakika Tam Deneme Simülatörü</title>
+    <title>TMV 120 Dakika Tam Deneme Simülatörü - Ultimate</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -16,23 +16,35 @@
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .opt-btn { width: 100%; text-align: left; padding: 16px; margin-bottom: 12px; border-radius: 8px; border: 2px solid #e2e8f0; background: #fff; transition: 0.2s; font-weight: 600; display: flex; align-items: center; }
-        .opt-btn.selected { border-color: #3182ce; background: #ebf8ff; }
+        /* Şık Tasarımları */
+        .opt-wrapper { display: flex; align-items: center; margin-bottom: 12px; gap: 8px; }
+        .opt-btn { flex-grow: 1; text-align: left; padding: 16px; border-radius: 8px; border: 2px solid #e2e8f0; background: #fff; transition: 0.2s; font-weight: 600; display: flex; align-items: center; cursor: pointer; }
+        .opt-btn.selected { border-color: #3182ce; background: #ebf8ff; box-shadow: 0 2px 10px rgba(49, 130, 206, 0.2); }
         .opt-btn.correct-review { border-color: #38a169; background: #f0fff4; color: #22543d; }
         .opt-btn.wrong-review { border-color: #e53e3e; background: #fff5f5; color: #742a2a; }
         
+        /* Eleme Özelliği (Üstünü Çizme) */
+        .eliminate-btn { width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; border-radius: 8px; border: 2px solid #e2e8f0; background: #f8fafc; color: #a0aec0; transition: 0.2s; cursor: pointer; }
+        .eliminate-btn:hover { background: #e2e8f0; color: #4a5568; }
+        .eliminate-btn.eliminated { background: #fed7d7; border-color: #fc8181; color: #e53e3e; }
+        .opt-btn.eliminated-text { opacity: 0.4; text-decoration: line-through; background: #f7fafc; border-color: #edf2f7; }
+
         .ai-loading { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* Question Navigation Grid */
         .q-nav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 8px; }
-        .q-nav-btn { height: 40px; border-radius: 6px; font-weight: bold; border: 1px solid #cbd5e0; background: #fff; color: #4a5568; }
+        .q-nav-btn { height: 40px; border-radius: 6px; font-weight: bold; border: 1px solid #cbd5e0; background: #fff; color: #4a5568; transition: 0.1s; }
         .q-nav-btn.answered { background: #3182ce; color: #fff; border-color: #3182ce; }
-        .q-nav-btn.active { box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5); }
+        .q-nav-btn.active { box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5); transform: scale(1.05); }
         .q-nav-btn.wrong-nav { background: #e53e3e; color: #fff; border-color: #e53e3e; }
         .q-nav-btn.correct-nav { background: #38a169; color: #fff; border-color: #38a169; }
 
         .loader-screen { position: fixed; inset: 0; background: rgba(26, 54, 93, 0.95); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
+        
+        /* Progress Bar */
+        .progress-bg { background: #edf2f7; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 10px; }
+        .progress-bar { background: #3182ce; height: 100%; width: 0%; transition: width 0.3s ease; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -48,8 +60,8 @@
             </div>
             <button onclick="showSettings()" class="text-white hover:text-[#d69e2e] transition"><i class="fa-solid fa-gear text-xl"></i></button>
         </div>
-        <div id="exam-top-bar" class="hidden bg-[#e53e3e] text-center py-2 font-bold text-sm tracking-widest flex justify-center items-center gap-3">
-            <i class="fa-regular fa-clock text-lg"></i> Kalan Süre: <span id="timer-display" class="text-xl">02:00:00</span>
+        <div id="exam-top-bar" class="hidden bg-[#e53e3e] text-center py-2 font-bold text-sm tracking-widest flex justify-center items-center gap-3 shadow-inner">
+            <i class="fa-regular fa-clock text-lg animate-pulse"></i> Kalan Süre: <span id="timer-display" class="text-xl">02:00:00</span>
         </div>
     </header>
 
@@ -58,54 +70,63 @@
         <section id="screen-intro" class="glass-panel p-6 md:p-10 text-center fade-in">
             <i class="fa-solid fa-passport text-6xl text-[#d69e2e] mb-6"></i>
             <h2 class="text-2xl md:text-3xl font-bold text-[#1a365d] mb-4">Gerçek Sınav Modu</h2>
-            <p class="text-gray-600 mb-8 text-sm md:text-base">120 Dakikalık kesintisiz tam deneme. Sorular 2016-2025 TMV sınav havuzu mantığıyla anlık olarak ÖSYM formatında üretilir.</p>
+            <p class="text-gray-600 mb-8 text-sm md:text-base">120 Dakikalık kesintisiz tam deneme. Sorular ÖSYM formatında anlık olarak üretilir.</p>
 
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-8 text-left">
-                <h3 class="font-bold text-[#1a365d] mb-3 border-b pb-2"><i class="fa-solid fa-key mr-2"></i>Sistem Bağlantısı</h3>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-8 text-left shadow-sm">
+                <h3 class="font-bold text-[#1a365d] mb-4 border-b pb-2"><i class="fa-solid fa-key mr-2"></i>Sistem Bağlantısı</h3>
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Gemini API Anahtarı</label>
-                        <input type="password" id="api-key" class="w-full p-3 border border-gray-300 rounded focus:border-[#3182ce] outline-none font-mono text-sm" placeholder="AIzaSy...">
+                        <input type="password" id="api-key" class="w-full p-3 border border-gray-300 rounded focus:border-[#3182ce] outline-none font-mono text-sm" placeholder="Buraya yapıştırın...">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Model Seçimi</label>
                         <input type="text" id="api-model" class="w-full p-3 border border-gray-300 rounded focus:border-[#3182ce] outline-none font-mono text-sm" value="gemini-1.5-flash">
                     </div>
-                    <button onclick="saveConfig()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 rounded transition text-sm">Ayarları Kaydet</button>
-                    <div id="save-msg" class="hidden text-green-600 font-bold text-center text-sm">Kaydedildi!</div>
+                    <button onclick="saveConfig()" class="w-full bg-[#cbd5e0] hover:bg-[#a0aec0] text-[#1a202c] font-bold py-3 rounded transition text-sm flex justify-center items-center">
+                        <i class="fa-solid fa-floppy-disk mr-2"></i> Ayarları Kaydet
+                    </button>
+                    <div id="save-msg" class="hidden text-green-600 font-bold text-center text-sm mt-2">Başarıyla Kaydedildi!</div>
                 </div>
             </div>
 
             <button onclick="startGeneration()" class="w-full bg-[#1a365d] hover:bg-[#2c5282] text-white font-bold py-4 rounded-xl shadow-lg text-lg flex justify-center items-center transition transform hover:-translate-y-1">
                 <i class="fa-solid fa-play mr-3"></i> 120 Dakikalık Denemeyi Başlat
             </button>
-            <div id="api-error-msg" class="hidden mt-4 text-red-600 font-bold text-sm bg-red-100 p-3 rounded"></div>
+            <div id="api-error-msg" class="hidden mt-4 text-red-600 font-bold text-sm bg-red-100 border border-red-300 p-3 rounded"></div>
         </section>
 
         <div id="screen-loading" class="loader-screen hidden">
             <span class="ai-loading mb-4" style="width: 50px; height: 50px; border-width: 5px;"></span>
-            <h2 class="text-2xl font-bold mb-2 text-center px-4">TMV Kitapçığı Basılıyor...</h2>
-            <p class="text-gray-300 text-center px-6 text-sm">Yapay Zeka; Sözel Mantık, Türkçe Alan Bilgisi ve Eğitim Bilimleri sorularını hazırlıyor. Lütfen bekleyin (15-30 sn).</p>
+            <h2 class="text-2xl font-bold mb-2 text-center px-4">Soru Kitapçığı Basılıyor...</h2>
+            <p class="text-gray-300 text-center px-6 text-sm">Yapay Zeka (Sözel Mantık, TMV, Alan Bilgisi ve ÖYT) sorularını oluşturuyor. Bu işlem 15-30 saniye sürebilir.</p>
         </div>
 
         <section id="screen-exam" class="hidden fade-in">
             <div class="glass-panel p-4 mb-4">
-                <div class="text-sm font-bold text-gray-600 mb-2 flex justify-between">
-                    <span>Soru Kitapçığı</span>
-                    <button onclick="finishExamEarly()" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-flag-checkered mr-1"></i> Sınavı Bitir</button>
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-bold text-gray-600">Optik Form</span>
+                    <button onclick="showSubmitSummary()" class="bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 font-bold text-xs px-3 py-1.5 rounded"><i class="fa-solid fa-flag-checkered mr-1"></i> Sınavı Bitir</button>
                 </div>
+                <div class="progress-bg mb-3"><div id="exam-progress-bar" class="progress-bar"></div></div>
                 <div id="q-nav-container" class="q-nav-grid"></div>
             </div>
 
             <div class="glass-panel p-5 md:p-8 mb-4">
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex justify-between items-start mb-6 border-b border-gray-100 pb-4">
                     <span id="q-category" class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded border border-blue-200">Kategori</span>
-                    <span id="q-number" class="font-bold text-gray-500">Soru 1</span>
+                    <span id="q-number" class="font-bold text-gray-400">Soru 1/15</span>
                 </div>
                 
-                <h3 id="q-text" class="text-lg md:text-xl font-semibold text-gray-900 mb-8 leading-relaxed whitespace-pre-wrap select-none">Soru metni...</h3>
+                <h3 id="q-text" class="text-lg md:text-xl font-semibold text-[#1a202c] mb-8 leading-relaxed whitespace-pre-wrap select-none">Soru metni...</h3>
                 
-                <div id="q-options" class="space-y-3"></div>
+                <div id="q-options" class="space-y-1 mb-6"></div>
+
+                <div class="flex justify-end border-t border-gray-100 pt-3">
+                    <button onclick="clearSelection()" class="text-xs font-bold text-gray-500 hover:text-red-500 transition flex items-center">
+                        <i class="fa-solid fa-eraser mr-1"></i> Seçimi Temizle (Boş Bırak)
+                    </button>
+                </div>
             </div>
 
             <div class="flex justify-between">
@@ -114,75 +135,88 @@
             </div>
         </section>
 
+        <div id="submit-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex justify-center items-center px-4">
+            <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 w-full max-w-sm text-center">
+                <i class="fa-solid fa-triangle-exclamation text-5xl text-[#d69e2e] mb-4"></i>
+                <h3 class="text-xl font-bold text-[#1a365d] mb-2">Sınavı Bitiriyorsunuz!</h3>
+                <p class="text-sm text-gray-600 mb-6" id="submit-summary-text">Toplam 15 sorudan X tanesini boş bıraktınız.</p>
+                <div class="flex gap-3">
+                    <button onclick="document.getElementById('submit-modal').classList.add('hidden')" class="flex-1 bg-gray-200 text-gray-800 font-bold py-3 rounded-lg">Sınava Dön</button>
+                    <button onclick="finishExamConfirmed()" class="flex-1 bg-red-600 text-white font-bold py-3 rounded-lg">Evet, Bitir</button>
+                </div>
+            </div>
+        </div>
+
         <section id="screen-results" class="hidden fade-in">
             <div class="glass-panel p-6 md:p-10 text-center mb-6">
                 <i class="fa-solid fa-chart-pie text-6xl text-[#3182ce] mb-4"></i>
                 <h2 class="text-3xl font-bold text-[#1a365d] mb-2">Sınav Tamamlandı</h2>
                 <p class="text-gray-600 mb-8">Puanınız ve genel durumunuz aşağıdadır.</p>
 
-                <div class="flex justify-center gap-4 md:gap-8 mb-8">
-                    <div class="bg-green-50 border border-green-200 p-4 rounded-xl w-28 md:w-32">
-                        <span class="block text-3xl font-bold text-green-600" id="res-correct">0</span>
+                <div class="flex justify-center gap-3 md:gap-8 mb-8">
+                    <div class="bg-green-50 border border-green-200 p-4 rounded-xl w-24 md:w-32 shadow-sm">
+                        <span class="block text-3xl md:text-4xl font-bold text-green-600" id="res-correct">0</span>
                         <span class="text-xs font-bold text-green-800 uppercase">Doğru</span>
                     </div>
-                    <div class="bg-red-50 border border-red-200 p-4 rounded-xl w-28 md:w-32">
-                        <span class="block text-3xl font-bold text-red-600" id="res-wrong">0</span>
+                    <div class="bg-red-50 border border-red-200 p-4 rounded-xl w-24 md:w-32 shadow-sm">
+                        <span class="block text-3xl md:text-4xl font-bold text-red-600" id="res-wrong">0</span>
                         <span class="text-xs font-bold text-red-800 uppercase">Yanlış</span>
                     </div>
-                    <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl w-28 md:w-32">
-                        <span class="block text-3xl font-bold text-gray-600" id="res-empty">0</span>
+                    <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl w-24 md:w-32 shadow-sm">
+                        <span class="block text-3xl md:text-4xl font-bold text-gray-600" id="res-empty">0</span>
                         <span class="text-xs font-bold text-gray-800 uppercase">Boş</span>
                     </div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button onclick="startAnalysisMode()" class="bg-[#d69e2e] text-[#1a365d] font-bold py-4 px-8 rounded-xl shadow-md text-lg"><i class="fa-solid fa-microscope mr-2"></i> Yanlışlarımı Analiz Et</button>
-                    <button onclick="rebootSystem()" class="bg-gray-800 text-white font-bold py-4 px-8 rounded-xl shadow-md text-lg"><i class="fa-solid fa-rotate mr-2"></i> Yeni Deneme Üret</button>
+                    <button onclick="startAnalysisMode()" class="bg-[#d69e2e] text-[#1a365d] font-bold py-4 px-8 rounded-xl shadow-md text-lg transition hover:bg-[#b7791f]"><i class="fa-solid fa-microscope mr-2"></i> Yanlışlarımı Analiz Et</button>
+                    <button onclick="rebootSystem()" class="bg-gray-800 text-white font-bold py-4 px-8 rounded-xl shadow-md text-lg transition hover:bg-black"><i class="fa-solid fa-rotate mr-2"></i> Yeni Deneme Üret</button>
                 </div>
             </div>
         </section>
 
         <section id="screen-analysis" class="hidden fade-in">
-            <div class="glass-panel p-4 mb-4 flex justify-between items-center bg-[#1a365d] text-white">
-                <h3 class="font-bold"><i class="fa-solid fa-user-graduate mr-2"></i> Özel Ders Analiz Modu</h3>
-                <button onclick="document.getElementById('screen-analysis').classList.add('hidden'); document.getElementById('screen-results').classList.remove('hidden');" class="text-sm bg-white text-[#1a365d] px-3 py-1 rounded font-bold">Sonuca Dön</button>
+            <div class="glass-panel p-4 mb-4 flex justify-between items-center bg-[#1a365d] text-white rounded-t-xl">
+                <h3 class="font-bold text-sm md:text-base"><i class="fa-solid fa-user-graduate mr-2"></i> Akıllı Analiz Modu</h3>
+                <button onclick="document.getElementById('screen-analysis').classList.add('hidden'); document.getElementById('screen-results').classList.remove('hidden');" class="text-xs bg-white text-[#1a365d] px-3 py-1.5 rounded font-bold shadow-sm">Sonuca Dön</button>
             </div>
 
             <div class="glass-panel p-5 md:p-8 mb-4 border-l-4 border-[#e53e3e]">
                 <div class="flex justify-between items-start mb-4">
-                    <span id="an-category" class="text-xs font-bold text-gray-500 uppercase">Kategori</span>
-                    <span id="an-number" class="font-bold text-gray-500">Soru 1</span>
+                    <span id="an-category" class="text-xs font-bold text-gray-500 uppercase bg-gray-100 px-2 py-1 rounded">Kategori</span>
+                    <span id="an-number" class="font-bold text-red-500 text-sm">Hata 1</span>
                 </div>
                 <h3 id="an-text" class="text-lg font-semibold text-gray-900 mb-6">Soru metni...</h3>
                 <div id="an-options" class="space-y-2 mb-6"></div>
                 
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-5">
-                    <button id="btn-fetch-explanation" onclick="getAIExplanation()" class="w-full bg-[#3182ce] hover:bg-[#2b6cb0] text-white font-bold py-3 rounded shadow flex justify-center items-center">
+                    <button id="btn-fetch-explanation" onclick="getAIExplanation()" class="w-full bg-[#3182ce] hover:bg-[#2b6cb0] text-white font-bold py-3 rounded shadow flex justify-center items-center transition">
                         <i class="fa-solid fa-robot mr-2"></i> Neden Yanlış Yaptım? Açıkla!
                     </button>
-                    <div id="an-explanation-box" class="hidden mt-4 text-sm text-gray-800 leading-relaxed border-t border-blue-200 pt-4"></div>
+                    <div id="an-explanation-box" class="hidden mt-2 text-sm text-gray-800 leading-relaxed pt-2"></div>
                 </div>
             </div>
 
             <div class="flex justify-between">
-                <button onclick="prevAnalysis()" id="btn-an-prev" class="bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg"><i class="fa-solid fa-chevron-left mr-2"></i> Önceki Hata</button>
-                <button onclick="nextAnalysis()" id="btn-an-next" class="bg-gray-800 text-white font-bold py-3 px-6 rounded-lg shadow">Sonraki Hata <i class="fa-solid fa-chevron-right ml-2"></i></button>
+                <button onclick="prevAnalysis()" id="btn-an-prev" class="bg-gray-200 text-gray-800 font-bold py-3 px-4 md:px-6 rounded-lg text-sm md:text-base"><i class="fa-solid fa-chevron-left mr-1 md:mr-2"></i> Önceki Hata</button>
+                <button onclick="nextAnalysis()" id="btn-an-next" class="bg-gray-800 text-white font-bold py-3 px-4 md:px-6 rounded-lg shadow text-sm md:text-base">Sonraki Hata <i class="fa-solid fa-chevron-right ml-1 md:mr-2"></i></button>
             </div>
         </section>
 
     </main>
 
     <script>
-        // --- SİSTEM DURUMU VE DEĞİŞKENLER ---
+        // --- SİSTEM DURUMU ---
         let appState = {
             apiKey: localStorage.getItem('tmv_key') || "",
             model: localStorage.getItem('tmv_model') || "gemini-1.5-flash",
             questions: [], 
-            answers: [], 
+            answers: [], // Kullanıcının şık indeksleri (0-4), boşsa null
+            eliminated: [], // Her soru için elenen şıklar (Örn: [ [0,2], [], [1]... ])
             currentIndex: 0,
             timer: 7200, 
             interval: null,
-            wrongQuestions: [], 
+            wrongQuestions: [], // {qIndex, status, explanation: null}
             currentAnalysisIndex: 0
         };
 
@@ -212,7 +246,7 @@
             document.getElementById('api-error-msg').classList.add('hidden');
         }
 
-        // --- API İLETİŞİMİ (GEMINI) ---
+        // --- API İLETİŞİMİ ---
         async function fetchExamFromAI() {
             if (!appState.apiKey) { 
                 showError("Lütfen ayarlardan API Anahtarınızı giriniz."); 
@@ -223,15 +257,14 @@
 Dağılım şöyle olsun:
 - 3 soru: Sözel Mantık ve Muhakeme
 - 3 soru: TMV 6721 sayılı kanun ve Genel Kültür
-- 4 soru: Türkçe Alan Bilgisi (Dilbilgisi, Cümle Ögeleri)
+- 4 soru: Türkçe Alan Bilgisi (Dilbilgisi, Ses Olayları, Cümle Ögeleri)
 - 5 soru: Eğitim Bilimleri (ÖYT, Yapılandırmacılık, CEFR vakaları)
 
 Kurallar:
-1. Soru metinleri uzun ve çeldirici olsun.
+1. Soru metinleri uzun, çeldirici ve akademik dilde olsun.
 2. Tam olarak 5 seçenek (A,B,C,D,E) olsun.
 3. category alanına sorunun hangi bölümden olduğunu yaz.`;
 
-            // DÜZELTİLEN KISIM: responseSchema artık OBJECT formatında ve questions dizisini barındırıyor.
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
@@ -265,14 +298,11 @@ Kurallar:
                 
                 const data = await response.json();
                 
-                // Eğer Google'dan bir hata mesajı dönerse (Kota, Yanlış API vs.)
-                if (data.error) {
-                    throw new Error(data.error.message);
-                }
+                if (data.error) throw new Error(data.error.message);
 
                 const text = data.candidates[0].content.parts[0].text;
                 const parsedData = JSON.parse(text);
-                return parsedData.questions; // Düzeltilen JSON yapısından soruları çek
+                return parsedData.questions;
                 
             } catch (error) {
                 console.error("API Hatası:", error);
@@ -300,8 +330,10 @@ Kurallar:
             if (qs && qs.length > 0) {
                 appState.questions = qs;
                 appState.answers = new Array(qs.length).fill(null);
+                // Eleme (strikethrough) dizisini hazırla
+                appState.eliminated = Array.from({ length: qs.length }, () => []); 
                 appState.currentIndex = 0;
-                appState.timer = 7200; // 120 dk = 7200 sn
+                appState.timer = 7200; // 120 dk
                 
                 document.getElementById('exam-top-bar').classList.remove('hidden');
                 document.getElementById('screen-exam').classList.remove('hidden');
@@ -323,7 +355,7 @@ Kurallar:
                 if (appState.timer <= 0) {
                     clearInterval(appState.interval);
                     alert("SÜRE DOLDU! Sınavınız otomatik olarak sonlandırılıyor.");
-                    finishExamEarly();
+                    finishExamConfirmed();
                 }
             }, 1000);
         }
@@ -334,10 +366,15 @@ Kurallar:
             const s = (appState.timer % 60).toString().padStart(2, '0');
             document.getElementById('timer-display').innerText = `${h}:${m}:${s}`;
             
-            // Son 10 dakika kızarır
             if(appState.timer < 600) {
-                document.getElementById('exam-top-bar').classList.add('animate-pulse', 'bg-red-700');
+                document.getElementById('exam-top-bar').classList.add('bg-red-700');
             }
+        }
+
+        function updateProgressBar() {
+            const answeredCount = appState.answers.filter(a => a !== null).length;
+            const percentage = (answeredCount / appState.questions.length) * 100;
+            document.getElementById('exam-progress-bar').style.width = `${percentage}%`;
         }
 
         // --- SINAV ARAYÜZÜ (RENDER) ---
@@ -351,6 +388,7 @@ Kurallar:
                 btn.onclick = () => { appState.currentIndex = i; renderQuestion(); };
                 grid.appendChild(btn);
             });
+            updateProgressBar();
         }
 
         function updateNavigationGrid() {
@@ -358,11 +396,13 @@ Kurallar:
             for(let i=0; i<btns.length; i++) {
                 btns[i].className = `q-nav-btn ${appState.answers[i] !== null ? 'answered' : ''} ${i === appState.currentIndex ? 'active' : ''}`;
             }
+            updateProgressBar();
         }
 
         function renderQuestion() {
             const q = appState.questions[appState.currentIndex];
             const ans = appState.answers[appState.currentIndex];
+            const elims = appState.eliminated[appState.currentIndex];
             
             document.getElementById('q-category').innerText = q.category || "Genel Test";
             document.getElementById('q-number').innerText = `Soru ${appState.currentIndex + 1} / ${appState.questions.length}`;
@@ -372,11 +412,32 @@ Kurallar:
             box.innerHTML = '';
             
             q.options.forEach((opt, i) => {
+                const isEliminated = elims.includes(i);
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'opt-wrapper';
+
+                // Şıkkın kendisi
                 const btn = document.createElement('button');
-                btn.className = `opt-btn ${ans === i ? 'selected' : ''}`;
-                btn.innerHTML = `<span class="w-8 h-8 flex justify-center items-center rounded bg-gray-100 text-gray-500 font-bold mr-4 border border-gray-300 pointer-events-none">${labels[i]}</span> <span class="pointer-events-none">${opt}</span>`;
-                btn.onclick = () => selectOption(i);
-                box.appendChild(btn);
+                btn.className = `opt-btn ${ans === i ? 'selected' : ''} ${isEliminated ? 'eliminated-text' : ''}`;
+                btn.innerHTML = `<span class="w-8 h-8 flex justify-center items-center rounded bg-gray-100 text-gray-500 font-bold mr-4 border border-gray-300 pointer-events-none transition">${labels[i]}</span> <span class="pointer-events-none">${opt}</span>`;
+                btn.onclick = () => {
+                    if(!isEliminated) selectOption(i);
+                };
+
+                // Eleme (Çarpı) Butonu
+                const elimBtn = document.createElement('button');
+                elimBtn.className = `eliminate-btn ${isEliminated ? 'eliminated' : ''}`;
+                elimBtn.innerHTML = isEliminated ? '<i class="fa-solid fa-eye-slash"></i>' : '<i class="fa-solid fa-xmark"></i>';
+                elimBtn.title = isEliminated ? "Şıkkı Geri Al" : "Şıkkı Ele";
+                elimBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleEliminate(i);
+                };
+
+                wrapper.appendChild(btn);
+                wrapper.appendChild(elimBtn);
+                box.appendChild(wrapper);
             });
 
             document.getElementById('btn-prev').disabled = appState.currentIndex === 0;
@@ -385,21 +446,52 @@ Kurallar:
 
         function selectOption(index) {
             appState.answers[appState.currentIndex] = index;
-            renderQuestion(); // Re-render to show selection
+            renderQuestion(); 
+        }
+
+        function toggleEliminate(index) {
+            const elims = appState.eliminated[appState.currentIndex];
+            const pos = elims.indexOf(index);
+            if(pos === -1) {
+                elims.push(index);
+                // Eğer elenen şık seçiliyse seçimi kaldır
+                if(appState.answers[appState.currentIndex] === index) {
+                    appState.answers[appState.currentIndex] = null;
+                }
+            } else {
+                elims.splice(pos, 1);
+            }
+            renderQuestion();
+        }
+
+        function clearSelection() {
+            appState.answers[appState.currentIndex] = null;
+            renderQuestion();
         }
 
         function goPrev() { if(appState.currentIndex > 0) { appState.currentIndex--; renderQuestion(); } }
         function goNext() { 
             if(appState.currentIndex < appState.questions.length - 1) { appState.currentIndex++; renderQuestion(); } 
-            else { finishExamEarly(); } // Son sorudaysa bitirmeye yönlendir
+            else { showSubmitSummary(); } 
         }
 
-        // --- SINAV BİTİRME VE SONUÇLAR ---
-        function finishExamEarly() {
-            if(confirm("Sınavı bitirmek istediğinize emin misiniz? Doldurulmayan sorular 'Boş' sayılacaktır.")) {
-                clearInterval(appState.interval);
-                calculateResults();
+        // --- SINAV BİTİRME (ÖZET MODALI) ---
+        function showSubmitSummary() {
+            const emptyCount = appState.answers.filter(a => a === null).length;
+            const summaryText = document.getElementById('submit-summary-text');
+            
+            if(emptyCount === 0) {
+                summaryText.innerHTML = "Tüm soruları işaretlediniz. Sınavı bitirmek istediğinize emin misiniz?";
+            } else {
+                summaryText.innerHTML = `Toplam <strong>${appState.questions.length}</strong> sorudan <strong class="text-red-600">${emptyCount} tanesini boş</strong> bıraktınız. Bitirmek istediğinize emin misiniz?`;
             }
+            document.getElementById('submit-modal').classList.remove('hidden');
+        }
+
+        function finishExamConfirmed() {
+            document.getElementById('submit-modal').classList.add('hidden');
+            clearInterval(appState.interval);
+            calculateResults();
         }
 
         function calculateResults() {
@@ -407,18 +499,18 @@ Kurallar:
             document.getElementById('exam-top-bar').classList.add('hidden');
             
             let correct = 0, wrong = 0, empty = 0;
-            appState.wrongQuestions = []; // Analiz listesi
+            appState.wrongQuestions = []; // Reset analysis data
 
             appState.questions.forEach((q, i) => {
                 const userAns = appState.answers[i];
                 if (userAns === null) {
                     empty++;
-                    appState.wrongQuestions.push({ qIndex: i, status: 'empty' });
+                    appState.wrongQuestions.push({ qIndex: i, status: 'empty', explanation: null });
                 } else if (userAns === q.a) {
                     correct++;
                 } else {
                     wrong++;
-                    appState.wrongQuestions.push({ qIndex: i, status: 'wrong' });
+                    appState.wrongQuestions.push({ qIndex: i, status: 'wrong', explanation: null });
                 }
             });
 
@@ -435,10 +527,10 @@ Kurallar:
             document.getElementById('screen-intro').classList.remove('hidden');
         }
 
-        // --- ÖZEL DERS / ANALİZ MODU ---
+        // --- AKILLI ANALİZ MODU ---
         function startAnalysisMode() {
             if(appState.wrongQuestions.length === 0) {
-                alert("Tebrikler! Hiç yanlışınız veya boşunuz yok.");
+                alert("Mükemmel! Hiç yanlışınız veya boşunuz yok.");
                 return;
             }
             appState.currentAnalysisIndex = 0;
@@ -453,7 +545,7 @@ Kurallar:
             const userAns = appState.answers[errorObj.qIndex];
 
             document.getElementById('an-category').innerText = q.category || "Analiz";
-            document.getElementById('an-number').innerText = `Hata ${appState.currentAnalysisIndex + 1} / ${appState.wrongQuestions.length} (Gerçek Soru: ${errorObj.qIndex + 1})`;
+            document.getElementById('an-number').innerText = `Hata ${appState.currentAnalysisIndex + 1} / ${appState.wrongQuestions.length} (Soru: ${errorObj.qIndex + 1})`;
             document.getElementById('an-text').innerText = q.q;
 
             const box = document.getElementById('an-options');
@@ -461,28 +553,41 @@ Kurallar:
             
             q.options.forEach((opt, i) => {
                 const div = document.createElement('div');
-                let styling = "opt-btn cursor-default ";
+                let styling = "opt-btn cursor-default mb-2 ";
                 let icon = "";
 
                 if (i === q.a) {
-                    styling += "correct-review"; // Doğru Cevap
-                    icon = `<i class="fa-solid fa-check text-green-700 ml-auto text-xl"></i>`;
+                    styling += "correct-review border-green-500 shadow-md"; 
+                    icon = `<i class="fa-solid fa-circle-check text-green-600 ml-auto text-2xl"></i>`;
                 } else if (i === userAns) {
-                    styling += "wrong-review"; // Kullanıcının Yanlışı
-                    icon = `<i class="fa-solid fa-xmark text-red-700 ml-auto text-xl"></i>`;
+                    styling += "wrong-review border-red-500 shadow-md"; 
+                    icon = `<i class="fa-solid fa-circle-xmark text-red-600 ml-auto text-2xl"></i>`;
                 } else {
-                    styling += "opacity-60"; // Diğer şıklar silik
+                    styling += "opacity-50 border-gray-200 bg-gray-50"; 
                 }
 
                 div.className = styling;
-                div.innerHTML = `<span class="w-8 h-8 flex justify-center items-center rounded font-bold mr-4 border pointer-events-none ${i===q.a ? 'bg-green-200 border-green-500' : (i===userAns ? 'bg-red-200 border-red-500' : 'bg-gray-100 border-gray-300')}">${labels[i]}</span> <span>${opt}</span> ${icon}`;
+                div.innerHTML = `<span class="w-8 h-8 flex justify-center items-center rounded font-bold mr-4 border pointer-events-none ${i===q.a ? 'bg-green-200 border-green-500 text-green-800' : (i===userAns ? 'bg-red-200 border-red-500 text-red-800' : 'bg-gray-200 border-gray-300')}">${labels[i]}</span> <span>${opt}</span> ${icon}`;
                 box.appendChild(div);
             });
 
-            // Reset Explanation box
-            document.getElementById('an-explanation-box').classList.add('hidden');
-            document.getElementById('an-explanation-box').innerHTML = '';
-            document.getElementById('btn-fetch-explanation').style.display = 'flex';
+            // Akıllı Hafıza Kontrolü: Daha önce açıklandıysa API'ye gitme, direkt göster!
+            const expBox = document.getElementById('an-explanation-box');
+            const expBtn = document.getElementById('btn-fetch-explanation');
+            
+            if (errorObj.explanation) {
+                // Hafızada varsa butonu gizle, direkt yazıyı göster
+                expBtn.style.display = 'none';
+                expBox.innerHTML = errorObj.explanation;
+                expBox.classList.remove('hidden');
+            } else {
+                // Yoksa butonu göster, kutuyu gizle
+                expBtn.style.display = 'flex';
+                expBtn.innerHTML = '<i class="fa-solid fa-robot mr-2"></i> Neden Yanlış Yaptım? Açıkla!';
+                expBtn.disabled = false;
+                expBox.classList.add('hidden');
+                expBox.innerHTML = '';
+            }
 
             document.getElementById('btn-an-prev').disabled = appState.currentAnalysisIndex === 0;
             document.getElementById('btn-an-next').disabled = appState.currentAnalysisIndex === appState.wrongQuestions.length - 1;
@@ -491,7 +596,7 @@ Kurallar:
         async function getAIExplanation() {
             const btn = document.getElementById('btn-fetch-explanation');
             const box = document.getElementById('an-explanation-box');
-            btn.innerHTML = '<span class="ai-loading mr-2"></span> Analiz Ediliyor...';
+            btn.innerHTML = '<span class="ai-loading mr-2"></span> Hoca Analiz Ediyor...';
             btn.disabled = true;
 
             const errorObj = appState.wrongQuestions[appState.currentAnalysisIndex];
@@ -500,10 +605,10 @@ Kurallar:
             
             const prompt = `Şu soruyu bir Eğitim Uzmanı gibi analiz et. Aday bu soruyu ${userAns === null ? 'BOŞ BIRAKTI' : 'YANLIŞ YAPTI'}.
 Soru: ${q.q}
-Adayın İşaretlediği Şık: ${userAns === null ? 'Yok' : q.options[userAns]}
+Adayın Şıkkı: ${userAns === null ? 'Yok' : q.options[userAns]}
 Doğru Şık: ${q.options[q.a]}
 
-Bana kısa, dostane ve pedagojik bir dille adayın neden o şıkkı (varsa) karıştırmış olabileceğini ve doğru cevabın mantığını (TMV/ÖYT/Alan bilgisi kurallarına bağlayarak) açıkla.`;
+Bana kısa, dostane ve pedagojik bir dille adayın hatasını ve doğru cevabın mantığını açıkla.`;
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${appState.model}:generateContent?key=${appState.apiKey}`, {
@@ -512,18 +617,21 @@ Bana kısa, dostane ve pedagojik bir dille adayın neden o şıkkı (varsa) kar�
                 });
                 
                 if (!response.ok) throw new Error("API Error");
-                
                 const data = await response.json();
-                
                 if (data.error) throw new Error(data.error.message);
 
-                btn.style.display = 'none'; // Butonu gizle
+                const formattedHTML = `<strong class="text-[#1a365d] border-b border-[#cbd5e0] pb-1 block mb-3"><i class="fa-solid fa-lightbulb text-yellow-500 mr-1"></i> Yapay Zeka Hoca Notu:</strong>` + data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                
+                // Hafızaya Kaydet (API Kotasını Korumak İçin)
+                errorObj.explanation = formattedHTML;
+
+                btn.style.display = 'none'; 
                 box.classList.remove('hidden');
-                box.innerHTML = `<strong class="text-[#1a365d]"><i class="fa-solid fa-graduation-cap mr-1"></i> Hoca Notu:</strong><br><br>` + data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                box.innerHTML = formattedHTML;
                 
             } catch (e) {
                 console.error("Açıklama Hatası:", e);
-                btn.innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i> Hata. Tekrar Dene';
+                btn.innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i> Hata Oluştu. Tekrar Dene';
                 btn.disabled = false;
             }
         }
